@@ -68,6 +68,7 @@ def objective(trial):
     EPS_START = trial.suggest_float('eps_start', 0.8, 1)
     EPS_END = trial.suggest_float('eps_end', 0.01, 0.1)
     EPS_DECAY = trial.suggest_int('eps_decay', 200, 1000)
+    BATCH_SIZE = trial.suggest_categorical('batch_size', [32, 64, 128, 256, 512])
 
     n_actions = env.action_space.n
     state, info = env.reset()
