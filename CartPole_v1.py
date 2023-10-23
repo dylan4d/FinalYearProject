@@ -57,10 +57,13 @@ def set_seed(seed):
         print('Using CUDA')
 
 set_seed(1)
+# best model
+global best_value
+best_value = -float('inf')
 
 def objective(trial):
-    env = gym.make('CartPole-v1', render_mode='rgb_array')
-
+    env = gym.make('CartPole-v1')
+    global best_value
     # Define the hyperparameter search space
     LR = trial.suggest_float('lr', 1e-4, 1e-2, log=True)
     GAMMA = trial.suggest_float('gamma', 0.95, 0.999)
@@ -69,7 +72,9 @@ def objective(trial):
     EPS_END = trial.suggest_float('eps_end', 0.01, 0.1)
     EPS_DECAY = trial.suggest_int('eps_decay', 200, 1000)
     BATCH_SIZE = trial.suggest_categorical('batch_size', [32, 64, 128, 256, 512])
-
+    REPLAY_MEMORY_SIZE = trial.suggest_categorical('replay_memory_size', [1000, 2000, 3000, 4000, 5000])
+    
+    memory = ReplayMemory(REPLAY_MEMORY_SIZE)
     n_actions = env.action_space.n
     state, info = env.reset()
     n_observation = len(state)
@@ -78,9 +83,8 @@ def objective(trial):
     target_net = DQN(n_observation, n_actions).to(device)
     target_net.load_state_dict(policy_net.state_dict())
     optimizer = optim.Adam(policy_net.parameters(), lr=LR)
-    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=10)
+    scheduler = scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'max', factor=0.1, patience=10, verbose=True)
 
-    memory = ReplayMemory(2500)
     steps_done = 0
 
     def select_action(state):
@@ -131,10 +135,12 @@ def objective(trial):
             param.grad.data.clamp_(-1, 1)
         
         optimizer.step()
-        scheduler.step()
+        scheduler.step(np.mean(episode_durations))
 
     # Function to plot the duration of each episode
-    def plot_duration(episode_durations):
+    def plot_duration(episode_durations, optimization_mode=False):
+        if optimization_mode:
+            return
         plt.figure(2)
         plt.clf()
         durations_t = torch.tensor(episode_durations, dtype=torch.float)
@@ -189,6 +195,10 @@ def objective(trial):
 
         if trial.should_prune():
             raise optuna.TrialPruned()
+        
+        if np.mean(episode_durations) > best_value:
+            best_value = np.mean(episode_durations)
+            torch.save(policy_net.state_dict(), 'cartpole_v1_best_model.pth')
 
     return np.mean(episode_durations)
 
