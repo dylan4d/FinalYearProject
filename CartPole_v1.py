@@ -189,7 +189,7 @@ def objective(trial):
         if i_episode % TARGET_UPDATE == 0:
             target_net.load_state_dict(policy_net.state_dict())
         
-        plot_duration(episode_durations)
+        plot_duration(episode_durations, optimization_mode=True)
 
         trial.report(episode_durations[-1], i_episode)
 
