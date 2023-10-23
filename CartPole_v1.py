@@ -184,7 +184,6 @@ def objective(trial):
             target_net.load_state_dict(policy_net.state_dict())
         
         plot_duration(episode_durations)
-        scheduler.step()
 
         trial.report(episode_durations[-1], i_episode)
 
