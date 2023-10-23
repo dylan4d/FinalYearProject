@@ -1,6 +1,7 @@
 import gymnasium as gym
 import math
 import random
+import numpy as np
 import matplotlib.pyplot as plt
 from collections import namedtuple, deque
 from itertools import count
@@ -47,8 +48,19 @@ class DQN(nn.Module):
             nn.init.xavier_uniform_(layer.weight)
             nn.init.constant_(layer.bias, 0)
 
+
+def set_seed(seed):
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed(seed)
+        print('Using CUDA')
+
+set_seed(1)
+
 def objective(trial):
     env = gym.make('CartPole-v1', render_mode='rgb_array')
+    env.seed(1)
 
     # Define the hyperparameter search space
     LR = trial.suggest_float('lr', 1e-5, 1e-1, log=True)
@@ -138,7 +150,6 @@ def objective(trial):
         plt.pause(0.001)  # pause a bit so that plots are updated
 
     num_episodes = 500
-    best_duration = 0
     for i_episode in range(num_episodes):
         state, info = env.reset()
         state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
@@ -176,13 +187,15 @@ def objective(trial):
         plot_duration(episode_durations)
         scheduler.step()
 
-        if episode_durations[-1] > best_duration:
-            best_duration = episode_durations
+        trial.report(episode_durations[-1], i_episode)
 
-    return best_duration
+        if trial.should_prune():
+            raise optuna.TrialPruned()
+
+    return np.mean(episode_durations)
 
 study = optuna.create_study(direction='maximize')
-study.optimize(objective, n_trials=100)
+study.optimize(objective, n_trials=200)
 
 print("Number of finished trials: ", len(study.trials))
 print("Best trial:")
