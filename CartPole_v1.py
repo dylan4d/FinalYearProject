@@ -62,13 +62,12 @@ def objective(trial):
     env = gym.make('CartPole-v1', render_mode='rgb_array')
 
     # Define the hyperparameter search space
-    LR = trial.suggest_float('lr', 1e-5, 1e-1, log=True)
-    GAMMA = trial.suggest_float('gamma', 0.9, 0.9999)
-    TARGET_UPDATE = trial.suggest_int('target_update', 1, 50)
-    EPS_START = trial.suggest_float('eps_start', 1e-5, 1)
-    EPS_END = trial.suggest_float('eps_end', 0.05, 0.1)
-    EPS_DECAY = trial.suggest_int('eps_decay', 10000, 100000)
-    BATCH_SIZE = 256
+    LR = trial.suggest_float('lr', 1e-4, 1e-2, log=True)
+    GAMMA = trial.suggest_float('gamma', 0.95, 0.999)
+    TARGET_UPDATE = trial.suggest_int('target_update', 5, 20)
+    EPS_START = trial.suggest_float('eps_start', 0.8, 1)
+    EPS_END = trial.suggest_float('eps_end', 0.01, 0.1)
+    EPS_DECAY = trial.suggest_int('eps_decay', 200, 1000)
 
     n_actions = env.action_space.n
     state, info = env.reset()
