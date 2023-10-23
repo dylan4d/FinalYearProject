@@ -60,7 +60,6 @@ set_seed(1)
 
 def objective(trial):
     env = gym.make('CartPole-v1', render_mode='rgb_array')
-    env.seed(1)
 
     # Define the hyperparameter search space
     LR = trial.suggest_float('lr', 1e-5, 1e-1, log=True)
