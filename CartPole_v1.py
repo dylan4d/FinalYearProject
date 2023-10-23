@@ -148,7 +148,7 @@ def objective(trial):
             plt.plot(means.numpy())
         plt.pause(0.001)  # pause a bit so that plots are updated
 
-    num_episodes = 500
+    num_episodes = 2500
     for i_episode in range(num_episodes):
         state, info = env.reset()
         state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
@@ -193,7 +193,7 @@ def objective(trial):
     return np.mean(episode_durations)
 
 study = optuna.create_study(direction='maximize')
-study.optimize(objective, n_trials=200)
+study.optimize(objective, n_trials=300)
 
 print("Number of finished trials: ", len(study.trials))
 print("Best trial:")
