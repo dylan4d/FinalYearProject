@@ -204,9 +204,4 @@ print("Params: ")
 for key, value in trial.params.items():
     print(f"    {key}: {value}")
 
-# print('Completed')
-# plot_duration(episode_durations)
-# plt.ioff()
-# plt.show()
-
 # torch.save(policy_net.state_dict(), '/home/df21/Documents/FYP/cartpole_v1_model.pth')
