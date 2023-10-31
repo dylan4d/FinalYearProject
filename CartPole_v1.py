@@ -202,9 +202,15 @@ def objective(trial):
 
     return np.mean(episode_durations)
 
-study = optuna.create_study(direction='maximize')
+storage_url = "sqlite:///optuna_study.db"
+study_name = 'cartpole_study'
+
+# Create a new study or load an existing study
+study = optuna.create_study(study_name=study_name, storage=storage_url, direction='maximize', load_if_exists=True)
 study.optimize(objective, n_trials=300)
 
+# Load the study
+study = optuna.load_study(study_name=study_name, storage=storage_url)
 print("Number of finished trials: ", len(study.trials))
 print("Best trial:")
 trial = study.best_trial
