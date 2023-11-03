@@ -94,7 +94,9 @@ def objective(trial):
     EPS_DECAY = trial.suggest_int('eps_decay', 2000, 10000)
     BATCH_SIZE = trial.suggest_categorical('batch_size', [32, 64, 128, 256, 512])
     REPLAY_MEMORY_SIZE = trial.suggest_categorical('replay_memory_size', [1000, 2000, 3000, 4000, 5000])
-    
+    PERFORMANCE_THRESHOLD = 195
+
+
     memory = ReplayMemory(REPLAY_MEMORY_SIZE)
     n_actions = env.action_space.n
     state, info = env.reset()
@@ -104,8 +106,6 @@ def objective(trial):
     target_net = DQN(n_observation, n_actions).to(device)
     target_net.load_state_dict(policy_net.state_dict())
     optimizer = optim.Adam(policy_net.parameters(), lr=LR)
-    scheduler = scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'max', factor=0.1, patience=10, verbose=True)
-
     steps_done = 0
 
     def select_action(state):
@@ -125,9 +125,9 @@ def objective(trial):
                 return torch.tensor([[env.action_space.sample()]], dtype=torch.long, device=device)
 
     episode_durations = []
-
     losses = []
     eps_thresholds = []
+    episode_rewards = []
 
     def optimize_model():
         if len(memory) < BATCH_SIZE:
@@ -161,44 +161,55 @@ def objective(trial):
             param.grad.data.clamp_(-1, 1)
         
         optimizer.step()
-        scheduler.step(np.mean(episode_durations))
 
-    # Function to plot the duration of each episode
-    def plot_duration(episode_durations, losses, eps_thresholds, optimization_mode=False):
+    # Initialize the figure and axes for the plots outside of the function
+    fig, axs = plt.subplots(4, 1, figsize=(10, 7))
+
+    def plot_durations(episode_durations, losses, eps_thresholds, episode_rewards, optimization_mode=False):
         if optimization_mode:
             return
 
-        plt.figure(1)
-        plt.clf()
+        # Clear the current axes and figure
+        for ax in axs:
+            ax.cla()
 
         # Plot Episode Durations
-        plt.subplot(3, 1, 1)
+        axs[0].set_title('Training Metrics')
+        axs[0].set_ylabel('Duration')
         durations_t = torch.tensor(episode_durations, dtype=torch.float)
-        plt.title('Training Metrics')
-        plt.ylabel('Duration')
-        plt.plot(durations_t.numpy())
-        if len(durations_t) >= 100:
-            means = durations_t.unfold(0, 100, 1).mean(1).view(-1)
-            means = torch.cat((torch.zeros(99), means))
-            plt.plot(means.numpy())
+        axs[0].plot(durations_t.numpy(), label='Raw')
+        smoothed_durations = np.cumsum(durations_t.numpy()) / (np.arange(len(durations_t)) + 1)
+        axs[0].plot(smoothed_durations, color='orange', label='Smoothed')
+        axs[0].legend()
 
         # Plot Losses
-        plt.subplot(3, 1, 2)
-        plt.ylabel('Loss')
-        plt.plot(losses)
+        axs[1].set_ylabel('Loss')
+        losses_t = np.array(losses)
+        axs[1].plot(losses_t, label='Raw')
+        smoothed_losses = np.cumsum(losses_t) / (np.arange(len(losses_t)) + 1)
+        axs[1].plot(smoothed_losses, color='orange', label='Smoothed')
+        axs[1].legend()
 
         # Plot Epsilon Thresholds
-        plt.subplot(3, 1, 3)
-        plt.xlabel('Episode/Step')
-        plt.ylabel('Epsilon')
-        plt.plot(eps_thresholds)
+        axs[2].set_ylabel('Epsilon')
+        axs[2].plot(eps_thresholds, label='Epsilon')
+        axs[2].legend()
 
+        # Plot Reward
+        axs[3].set_xlabel('Episode')
+        axs[3].set_ylabel('Reward')
+        rewards_t = torch.tensor(episode_rewards, dtype=torch.float)
+        axs[3].plot(rewards_t.numpy(), label='Episode Reward')
+        axs[3].legend()
+
+        plt.tight_layout()
         plt.pause(0.001)  # pause a bit so that plots are updated
 
     num_episodes = 25000
     for i_episode in range(num_episodes):
         state, info = env.reset()
         state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
+        episode_total_reward = 0 # reset the total reward for the episode
         
         # Set the policy net to training mode at the start of each episode
         policy_net.train()
@@ -213,6 +224,7 @@ def objective(trial):
             observation, reward, terminated, truncated, _ = env.step(action.item())
             reward = torch.tensor([reward], device=device)
             done = terminated or truncated
+            episode_total_reward += reward.item() # accumulate reward
 
             if not done:
                 next_state = torch.tensor(observation, dtype=torch.float32, device=device).unsqueeze(0)
@@ -230,12 +242,19 @@ def objective(trial):
         if i_episode % TARGET_UPDATE == 0:
             target_net.load_state_dict(policy_net.state_dict())
         
-        plot_duration(episode_durations, losses, eps_thresholds, optimization_mode=False)
+        episode_rewards.append(episode_total_reward)
+        
+        if len(episode_rewards) >= 115:
+            average_reward = np.mean(episode_rewards[-100:])
+            if average_reward > PERFORMANCE_THRESHOLD:
+                EPS_START = max(EPS_START * EPS_DECAY, EPS_END)
+
+        plot_durations(episode_durations, losses, eps_thresholds, episode_rewards, optimization_mode=False)
 
         trial.report(episode_durations[-1], i_episode)
 
-        if trial.should_prune():
-            raise optuna.TrialPruned()
+        # if trial.should_prune():
+        #     raise optuna.TrialPruned()
         
         if np.mean(episode_durations) > best_value:
             best_value = np.mean(episode_durations)
@@ -247,9 +266,8 @@ storage_url = "sqlite:///optuna_study.db"
 study_name = 'cartpole_study'
 
 # Create a new study or load an existing study
-pruner = optuna.pruners.PercentilePruner(95)  # Prune if the trial's best intermediate result is in the bottom 5% of intermediate results.
-study = optuna.create_study(study_name=study_name, storage=storage_url, direction='maximize', load_if_exists=True, pruner=pruner)
-study.optimize(objective, n_trials=5)
+study = optuna.create_study(study_name=study_name, storage=storage_url, direction='maximize', load_if_exists=True)
+study.optimize(objective, n_trials=500)
 
 # Load the study
 study = optuna.load_study(study_name=study_name, storage=storage_url)
