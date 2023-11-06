@@ -1,19 +1,19 @@
 # module imports
-import math
-import random
 import numpy as np
 from itertools import count
 import torch
 import torch.optim as optim
 import torch.nn.functional as F
 import optuna
+from matplotlib import pyplot as plt
 
 # custom imports
-from DomainShift.CustomCartPoleEnvironmentClass import CustomCartPoleEnv
-from ReplayMemoryClass import ReplayMemory, Transition
+from CustomCartPoleEnvironmentClass import CustomCartPoleEnv
+from ReplayMemoryClass import ReplayMemory
 from DQNClass import DQN
 from PlotFunction import plot_function
 from ActionSelection import ActionSelector
+from OptimizeModel import Optimizer
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -44,7 +44,6 @@ def objective(trial):
     REPLAY_MEMORY_SIZE = 10000
     PERFORMANCE_THRESHOLD = 195
 
-    action_selector = ActionSelector(policy_net, env.action_space.n, device, EPS_START, EPS_END, EPS_DECAY)
 
     memory = ReplayMemory(REPLAY_MEMORY_SIZE)
     n_actions = env.action_space.n
@@ -55,49 +54,16 @@ def objective(trial):
     target_net = DQN(n_observation, n_actions).to(device)
     target_net.load_state_dict(policy_net.state_dict())
     optimizer = optim.AdamW(policy_net.parameters(), lr=LR, amsgrad=True)
-    steps_done = 0
+
+    action_selector = ActionSelector(policy_net, env.action_space.n, device, EPS_START, EPS_END, EPS_DECAY)
+    optimizer_instance = Optimizer(policy_net, target_net, optimizer, memory, device, BATCH_SIZE, GAMMA, TAU)
 
     episode_durations = []
-    losses = []
+    losses = optimizer_instance.losses
     eps_thresholds = []
     episode_rewards = []
 
-    def optimize_model():
-        if len(memory) < BATCH_SIZE:
-            return
-        transitions = memory.sample(BATCH_SIZE)
-        batch = Transition(*zip(*transitions))
-
-        non_final_mask = torch.tensor([s is not None for s in batch.next_state], device=device, dtype=torch.bool)
-        non_final_next_states = torch.cat([s for s in batch.next_state if s is not None])
-
-        state_batch = torch.cat(batch.state)
-        action_batch = torch.cat(batch.action)
-        reward_batch = torch.cat(batch.reward)
-
-        state_action_values = policy_net(state_batch).gather(1, action_batch)
-
-        next_state_values = torch.zeros(BATCH_SIZE, device=device)
-        with torch.no_grad():
-            next_state_actions = policy_net(non_final_next_states).max(1)[1].unsqueeze(1)
-            next_state_values[non_final_mask] = target_net(non_final_next_states).gather(1, next_state_actions).squeeze(1)
-        
-        expected_state_action_values = (next_state_values * GAMMA) + reward_batch
-
-        loss = F.smooth_l1_loss(state_action_values, expected_state_action_values.unsqueeze(1))
-        losses.append(loss.item())  # Store the loss value
-
-        optimizer.zero_grad()  # Zero the gradients before the backward pass
-        loss.backward()  # Compute the backward pass
-        torch.nn.utils.clip_grad_value_(policy_net.parameters(), 100)  # Gradient clipping
-        optimizer.step()  # Take a step with the optimizer
-
-        # Soft update the target network
-        for target_param, policy_param in zip(target_net.parameters(), policy_net.parameters()):
-            target_param.data.copy_(TAU * policy_param.data + (1.0 - TAU) * target_param.data)
-        
-    
-    num_episodes = 25000
+    num_episodes = 2500
     for i_episode in range(num_episodes):
         state, info = env.reset()
         state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
@@ -111,7 +77,7 @@ def objective(trial):
             action = action_selector.select_action(state)
 
             # Take action and observe new state
-            observation, reward, terminated, truncated, _ = env.step(action.item())
+            (observation, reward, terminated, truncated, info), domain_shift = env.step(action.item())
             reward = torch.tensor([reward], device=device)
             done = terminated or truncated
             episode_total_reward += reward.item() # accumulate reward
@@ -123,7 +89,7 @@ def objective(trial):
             
             memory.push(state, action, next_state, reward)
             state = next_state
-            optimize_model()
+            optimizer_instance.Optimizer()
 
             if done:
                 episode_durations.append(t + 1)
@@ -136,7 +102,9 @@ def objective(trial):
             if average_reward > PERFORMANCE_THRESHOLD:
                 EPS_START = max(EPS_START * (1-EPS_DECAY), EPS_END)
 
-        plot_function(episode_durations, losses, eps_thresholds, episode_rewards, optimization_mode=False)
+        
+        fig, axs = plt.subplots(4,1, figsize=(10,7))
+        plot_function(fig, axs, episode_durations, losses, eps_thresholds, episode_rewards, optimization_mode=False)
 
         trial.report(episode_durations[-1], i_episode)
 
@@ -155,10 +123,11 @@ def objective(trial):
         # Not enough episodes to compute the last 100 episodes' mean, return the mean of what we have
         return np.mean(episode_rewards)
 
+
+
+# study organisation
 storage_url = "sqlite:///optuna_study.db"
 study_name = 'cartpole_study'
-
-optuna.delete_study(study_name=study_name, storage=storage_url)
 
 # Create a new study or load an existing study
 pruner = optuna.pruners.PercentilePruner(5)
