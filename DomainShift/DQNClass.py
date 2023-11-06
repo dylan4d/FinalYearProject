@@ -2,6 +2,13 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class DQN(nn.Module):
+    """
+    A simple Deep Q-Network architecture.
+    
+    Attributes:
+        n_observations (int): The number of observations from the environment.
+        n_actions (int): The number of possible actions the agent can take.
+    """
     def __init__(self, n_observations, n_actions):
         super(DQN, self).__init__()
         self.layer1 = nn.Linear(n_observations, 128)

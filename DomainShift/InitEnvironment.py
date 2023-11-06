@@ -25,6 +25,17 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Define a function to initialize the environment and all related components.
 def initialize_environment(config):
+    """
+    Initializes the environment along with the policy and target networks, action selector, and optimizer instance.
+    
+    Args:
+        config (dict): A dictionary containing hyperparameters and other configuration settings.
+    
+    Returns:
+        tuple: A tuple containing the environment, policy network, target network, optimizer, action selector,
+               and optimizer instance.
+    """
+    
     env = CustomCartPoleEnv()
     memory = ReplayMemory(config['replay_memory_size'])  # Access from config
     n_actions = env.action_space.n

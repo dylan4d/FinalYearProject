@@ -1,6 +1,15 @@
 from gym.envs.classic_control import CartPoleEnv
 
 class CustomCartPoleEnv(CartPoleEnv):
+    """
+    Custom implementation of the CartPole environment with an adjustable pole length.
+    The pole length changes over time, simulating a non-stationary environment.
+    
+    Attributes:
+        original_length (float): The original length of the pole.
+        length_change_rate (float): The rate at which the pole length changes each step.
+    """
+    
     def __init__(self):
         super().__init__()
         self.original_length = self.length  # Save the original length for resetting

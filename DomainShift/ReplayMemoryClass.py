@@ -1,7 +1,15 @@
 import random
 from collections import deque, namedtuple
 
+
 class ReplayMemory(object):
+    """
+    A simple implementation of replay memory.
+    
+    Attributes:
+        memory (deque): A double-ended queue to store the transitions with a maximum length.
+    """
+    
     def __init__(self, capacity):
         self.memory = deque([], maxlen=capacity)
     

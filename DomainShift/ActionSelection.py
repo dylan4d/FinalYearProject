@@ -3,6 +3,21 @@ import math
 import torch
 
 class ActionSelector:
+    """
+    This class is responsible for selecting actions using an epsilon-greedy policy.
+    It supports updating the exploration rate (epsilon) over time.
+    
+    Attributes:
+        policy_net (torch.nn.Module): The neural network used to select actions.
+        num_actions (int): The number of possible actions to choose from.
+        device (torch.device): The device on which to perform tensor operations.
+        EPS_START (float): The initial value of epsilon for the epsilon-greedy policy.
+        EPS_END (float): The minimum value of epsilon after decay.
+        EPS_DECAY (float): The rate at which epsilon decays.
+        steps_done (int): The number of steps taken (used for epsilon decay).
+        eps_thresholds (list): A list to store the value of epsilon after each step.
+    """
+    
     def __init__(self, policy_net, num_actions, device, EPS_START, EPS_END, EPS_DECAY):
         self.policy_net = policy_net
         self.num_actions = num_actions

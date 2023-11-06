@@ -75,7 +75,7 @@ def objective(trial):
             
             memory.push(state, action, next_state, reward)
             state = next_state
-            optimizer_instance.Optimizer()
+            optimizer_instance.optimize()
 
             if done:
                 episode_durations.append(t + 1)

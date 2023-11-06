@@ -3,6 +3,20 @@ import torch.nn.functional as F
 from ReplayMemoryClass import Transition
 
 class Optimizer:
+    """
+    Encapsulates the optimization process of the Q-network using experiences sampled from the replay memory.
+    
+    Attributes:
+        policy_net (torch.nn.Module): The current policy network.
+        target_net (torch.nn.Module): The target network, used for stable Q-value estimation.
+        optimizer (torch.optim.Optimizer): The optimizer used for training the policy network.
+        memory (ReplayMemory): The replay memory storing experience tuples.
+        device (torch.device): The device on which to perform tensor operations.
+        BATCH_SIZE (int): The size of the batch sampled from the replay memory.
+        GAMMA (float): The discount factor for future rewards.
+        TAU (float): The interpolation parameter for soft updating the target network.
+        losses (list): A list to store the loss values after each optimization step.
+    """
     
     def __init__(self, policy_net, target_net, optimizer, replay_memory, device, batch_size, gamma, tau):
         self.policy_net = policy_net

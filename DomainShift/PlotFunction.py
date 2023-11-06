@@ -3,6 +3,19 @@ import torch
 import matplotlib.pyplot as plt
 
 def plot_function(fig, axs, episode_durations, losses, eps_thresholds, episode_rewards, optimization_mode=False):
+        """
+    Plots the training metrics including episode durations, losses, epsilon thresholds, and episode rewards.
+    
+    Args:
+        fig (matplotlib.figure.Figure): The figure object for plotting.
+        axs (array of AxesSubplot): The axes of the subplots.
+        episode_durations (list): The durations of each episode.
+        losses (list): The loss values from each optimization step.
+        eps_thresholds (list): The epsilon values for each step.
+        episode_rewards (list): The rewards obtained for each episode.
+        optimization_mode (bool): If true, skips plotting. Useful for optimization when plotting is not needed.
+    """
+        
         if optimization_mode:
             return
         
