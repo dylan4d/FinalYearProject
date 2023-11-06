@@ -31,6 +31,20 @@ best_value = -float('inf')
 def objective(trial):
     global best_value
 
+    # suggest values for tunable hyperparameters
+    lr = trial.suggest_loguniform('lr', 1e-5, 1e-2)
+    eps_decay = trial.suggest_int('eps_decay', 100, 1000)
+    batch_size = trial.suggest_categorical('batch_size', [32, 64, 128, 256])
+    gamma = trial.suggest_uniform('gamma', 0.8, 0.9999)
+    
+    # Update the config with the suggested values
+    config.update({
+        "lr": lr,
+        "eps_decay": eps_decay,
+        "batch_size": batch_size,
+        "gamma": gamma,
+    })
+
     # Use the hyperparameters from the config dictionary
     PERFORMANCE_THRESHOLD = config['performance_threshold']
 
