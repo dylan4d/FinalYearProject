@@ -15,7 +15,7 @@ class Optimizer:
         self.TAU = tau
         self.losses = []
 
-    def Optimizer(self):
+    def optimize(self):
             if len(self.memory) < self.BATCH_SIZE:
                 return
             transitions = self.memory.sample(self.BATCH_SIZE)

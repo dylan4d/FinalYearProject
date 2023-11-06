@@ -27,3 +27,9 @@ class ActionSelector:
                 return self.policy_net(state).max(1)[1].view(1, 1)
             else:
                 return torch.tensor([[random.randrange(self.num_actions)]], dtype=torch.long, device=self.device)
+    
+    def get_epsilon_thresholds(self):
+        return self.eps_thresholds
+    
+    def update_epsilon(self):
+        self.EPS_START = max(self.EPS_START * (1 - self.EPS_DECAY), self.EPS_END)

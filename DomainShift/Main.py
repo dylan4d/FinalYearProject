@@ -14,6 +14,7 @@ from DQNClass import DQN
 from PlotFunction import plot_function
 from ActionSelection import ActionSelector
 from OptimizeModel import Optimizer
+from InitEnvironment import config, initialize_environment
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -31,36 +32,18 @@ global best_value
 best_value = -float('inf')
 
 def objective(trial):
-    env = CustomCartPoleEnv()
     global best_value
-    # Define the hyperparameter search space
-    LR = 1e-4
-    GAMMA = 0.99
-    TAU = 0.005  # For soft update of target parameters
-    EPS_START = 0.9
-    EPS_END = 0.05
-    EPS_DECAY = 1000
-    BATCH_SIZE = 128
-    REPLAY_MEMORY_SIZE = 10000
-    PERFORMANCE_THRESHOLD = 195
 
+    # Use the hyperparameters from the config dictionary
+    PERFORMANCE_THRESHOLD = config['performance_threshold']
+
+    # initialise environment and components
+    env, policy_net, target_net, optimizer, action_selector, optimizer_instance = initialize_environment(config)
+    memory = ReplayMemory(config['replay_memory_size'])
+    optimizer_instance.memory = memory
+    
     # For plotting function
     fig, axs = plt.subplots(4, 1, figsize=(10, 7))  # Create them once here
-
-
-    memory = ReplayMemory(REPLAY_MEMORY_SIZE)
-    n_actions = env.action_space.n
-    state, info = env.reset()
-    n_observation = len(state)
-
-    policy_net = DQN(n_observation, n_actions).to(device)
-    target_net = DQN(n_observation, n_actions).to(device)
-    target_net.load_state_dict(policy_net.state_dict())
-    optimizer = optim.AdamW(policy_net.parameters(), lr=LR, amsgrad=True)
-
-    action_selector = ActionSelector(policy_net, env.action_space.n, device, EPS_START, EPS_END, EPS_DECAY)
-    optimizer_instance = Optimizer(policy_net, target_net, optimizer, memory, device, BATCH_SIZE, GAMMA, TAU)
-
     episode_durations = []
     losses = optimizer_instance.losses
     eps_thresholds = []
@@ -103,9 +86,13 @@ def objective(trial):
         if len(episode_rewards) >= 100:
             average_reward = np.mean(episode_rewards[-100:])
             if average_reward > PERFORMANCE_THRESHOLD:
-                EPS_START = max(EPS_START * (1-EPS_DECAY), EPS_END)
-
+                action_selector.update_epsilon()
         
+        # Get the current epsilon threshold after update
+        current_eps_threshold = action_selector.get_current_epsilon_threshold()
+        eps_thresholds.append(current_eps_threshold)  # Append the latest epsilon value
+
+        # Plot the graphs wanted
         plot_function(fig, axs, episode_durations, losses, eps_thresholds, episode_rewards, optimization_mode=False)
 
         trial.report(episode_durations[-1], i_episode)
