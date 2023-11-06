@@ -2,13 +2,11 @@ import numpy as np
 import torch
 import matplotlib.pyplot as plt
 
-# Initialize the figure and axes for the plots outside of the function
-fig, axs = plt.subplots(4, 1, figsize=(10, 7))
-
-
 def plot_function(episode_durations, losses, eps_thresholds, episode_rewards, optimization_mode=False):
         if optimization_mode:
             return
+        # Initialize the figure and axes for the plots outside of the function
+        fig, axs = plt.subplots(4, 1, figsize=(10, 7))
 
         # Clear the current axes and figure
         for ax in axs:
