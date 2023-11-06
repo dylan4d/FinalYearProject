@@ -119,11 +119,11 @@ def objective(trial):
                 action_selector.update_epsilon()
         
         # Get the current epsilon threshold after update
-        current_eps_threshold = action_selector.get_current_epsilon_threshold()
+        current_eps_threshold = action_selector.get_epsilon_thresholds()[-1]
         eps_thresholds.append(current_eps_threshold)  # Append the latest epsilon value
 
         # Plot the graphs wanted
-        plot_function(fig, axs, episode_durations, losses, eps_thresholds, episode_rewards, optimization_mode=False)
+        plot_function(fig, axs, episode_durations, losses, eps_thresholds, episode_rewards, optimization_mode=True)
 
         trial.report(episode_durations[-1], i_episode)
 
