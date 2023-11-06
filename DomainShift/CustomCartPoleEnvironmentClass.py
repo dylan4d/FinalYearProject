@@ -23,7 +23,9 @@ class CustomCartPoleEnv(CartPoleEnv):
     def step(self, action):
         self.change_pole_length()  # Change the pole length at each step
         domain_shift = self.quantify_domain_shift()
-        return super().step(action), domain_shift
+        observation, reward, terminated, truncated, info = super().step(action)
+        self.logger.log_step(self.original_length, self.length, action, reward, domain_shift)
+        return (observation, reward, terminated, truncated, info), domain_shift
 
     def reset(self):
         self.length = self.original_length  # Reset the pole length when the environment is reset
@@ -31,4 +33,7 @@ class CustomCartPoleEnv(CartPoleEnv):
     
     def quantify_domain_shift(self):
         return abs(self.original_length - self.length)
+    
+    def set_logger(self, logger):
+        self.logger = logger
     

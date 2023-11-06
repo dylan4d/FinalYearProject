@@ -11,6 +11,7 @@ from ReplayMemoryClass import ReplayMemory
 from DQNClass import DQN
 from PlotFunction import plot_function
 from InitEnvironment import config, initialize_environment
+from DataLoggerClass import DataLogger
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -45,6 +46,10 @@ def objective(trial):
     eps_thresholds = []
     episode_rewards = []
 
+    # Logging function
+    logger = DataLogger('training_data.csv')
+    env.set_logger(logger)
+
     num_episodes = 2500
     for i_episode in range(num_episodes):
         state, info = env.reset()
@@ -72,6 +77,21 @@ def objective(trial):
             memory.push(state, action, next_state, reward)
             state = next_state
             optimizer_instance.optimize()
+            cumulative_reward = reward.item() # accumulate reward
+
+            # Log step data
+            logger.log_step(
+            episode=i_episode,
+            step=t,
+            original_length=env.original_length,
+            current_length=env.length,
+            action=action.item(),
+            reward=reward.item(),
+            domain_shift=domain_shift,
+            cumulative_reward=cumulative_reward,
+            epsilon=action_selector.get_current_epsilon_threshold(),
+            loss=optimizer_instance.get_last_loss()  # You would need to implement this method
+            )
 
             if done:
                 episode_durations.append(t + 1)
@@ -129,5 +149,3 @@ print("Value: ", trial.value)
 print("Params: ")
 for key, value in trial.params.items():
     print(f"    {key}: {value}")
-
-# torch.save(policy_net.state_dict(), '/home/df21/Documents/FYP/cartpole_v1_model.pth')
