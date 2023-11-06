@@ -2,18 +2,14 @@
 import numpy as np
 from itertools import count
 import torch
-import torch.optim as optim
 import torch.nn.functional as F
 import optuna
 from matplotlib import pyplot as plt
 
 # custom imports
-from CustomCartPoleEnvironmentClass import CustomCartPoleEnv
 from ReplayMemoryClass import ReplayMemory
 from DQNClass import DQN
 from PlotFunction import plot_function
-from ActionSelection import ActionSelector
-from OptimizeModel import Optimizer
 from InitEnvironment import config, initialize_environment
 
 
