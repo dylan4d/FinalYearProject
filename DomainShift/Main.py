@@ -1,3 +1,4 @@
+# module imports
 import math
 import random
 import numpy as np
@@ -12,6 +13,7 @@ from DomainShift.CustomCartPoleEnvironmentClass import CustomCartPoleEnv
 from ReplayMemoryClass import ReplayMemory, Transition
 from DQNClass import DQN
 from PlotFunction import plot_function
+from ActionSelection import ActionSelector
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -42,6 +44,7 @@ def objective(trial):
     REPLAY_MEMORY_SIZE = 10000
     PERFORMANCE_THRESHOLD = 195
 
+    action_selector = ActionSelector(policy_net, env.action_space.n, device, EPS_START, EPS_END, EPS_DECAY)
 
     memory = ReplayMemory(REPLAY_MEMORY_SIZE)
     n_actions = env.action_space.n
@@ -53,22 +56,6 @@ def objective(trial):
     target_net.load_state_dict(policy_net.state_dict())
     optimizer = optim.AdamW(policy_net.parameters(), lr=LR, amsgrad=True)
     steps_done = 0
-
-    def select_action(state):
-        nonlocal steps_done
-        sample = random.random()
-        eps_threshold = EPS_END + (EPS_START - EPS_END) * math.exp(-1. * steps_done / EPS_DECAY)
-        steps_done += 1
-        eps_thresholds.append(eps_threshold)  # Store the epsilon value
-        
-        # Set the model to evaluation mode
-        policy_net.eval()
-        
-        with torch.no_grad():
-            if sample > eps_threshold:
-                return policy_net(state).max(1)[1].view(1, 1)
-            else:
-                return torch.tensor([[env.action_space.sample()]], dtype=torch.long, device=device)
 
     episode_durations = []
     losses = []
@@ -121,7 +108,7 @@ def objective(trial):
         
         for t in count():
             # Select action
-            action = select_action(state)
+            action = action_selector.select_action(state)
 
             # Take action and observe new state
             observation, reward, terminated, truncated, _ = env.step(action.item())
