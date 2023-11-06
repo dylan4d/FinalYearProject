@@ -90,22 +90,22 @@ def objective(trial):
             
             memory.push(state, action, next_state, reward)
             state = next_state
-            optimizer_instance.optimize()
-            cumulative_reward = reward.item() # accumulate reward
+            loss = optimizer_instance.optimize()
 
-            # Log step data
-            logger.log_step(
-            episode=i_episode,
-            step=t,
-            original_length=env.original_length,
-            current_length=env.length,
-            action=action.item(),
-            reward=reward.item(),
-            domain_shift=domain_shift,
-            cumulative_reward=cumulative_reward,
-            epsilon=action_selector.get_current_epsilon_threshold(),
-            loss=optimizer_instance.get_last_loss()  # You would need to implement this method
-            )
+            if loss is not None:
+                # Log step data
+                logger.log_step(
+                episode=i_episode,
+                step=t,
+                original_length=env.original_length,
+                current_length=env.length,
+                action=action.item(),
+                reward=reward.item(),
+                domain_shift=domain_shift,
+                cumulative_reward=episode_total_reward,
+                epsilon=action_selector.get_epsilon_thresholds()[-1],
+                loss=loss.item()  # This assumes `optimize()` returns a loss, otherwise you'll need to get it another way
+                )
 
             if done:
                 episode_durations.append(t + 1)

@@ -63,3 +63,4 @@ class Optimizer:
             for target_param, policy_param in zip(self.target_net.parameters(), self.policy_net.parameters()):
                 target_param.data.copy_(self.TAU * policy_param.data + (1.0 - self.TAU) * target_param.data)
             
+            return loss
