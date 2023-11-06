@@ -44,6 +44,9 @@ def objective(trial):
     REPLAY_MEMORY_SIZE = 10000
     PERFORMANCE_THRESHOLD = 195
 
+    # For plotting function
+    fig, axs = plt.subplots(4, 1, figsize=(10, 7))  # Create them once here
+
 
     memory = ReplayMemory(REPLAY_MEMORY_SIZE)
     n_actions = env.action_space.n
@@ -103,7 +106,6 @@ def objective(trial):
                 EPS_START = max(EPS_START * (1-EPS_DECAY), EPS_END)
 
         
-        fig, axs = plt.subplots(4,1, figsize=(10,7))
         plot_function(fig, axs, episode_durations, losses, eps_thresholds, episode_rewards, optimization_mode=False)
 
         trial.report(episode_durations[-1], i_episode)
