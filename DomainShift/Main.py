@@ -31,6 +31,9 @@ set_seed(1)
 global best_value
 best_value = -float('inf')
 
+env, policy_net, target_net, optimizer, action_selector, optimizer_instance = initialize_environment(config)
+
+
 def objective(trial):
     global best_value
 
@@ -48,12 +51,14 @@ def objective(trial):
         "gamma": gamma,
     })
 
+    # reinitialize the environment with the updated values
+    env, policy_net, target_net, optimizer, action_selector, optimizer_instance = initialize_environment(config)
+
 
     # Use the hyperparameters from the config dictionary
     PERFORMANCE_THRESHOLD = config['performance_threshold']
 
     # initialise environment and components
-    env, policy_net, target_net, optimizer, action_selector, optimizer_instance = initialize_environment(config)
     memory = ReplayMemory(config['replay_memory_size'])
     optimizer_instance.memory = memory
 
@@ -130,9 +135,10 @@ def objective(trial):
 
             if done:
                 episode_durations.append(t + 1)
-                if predicted_suitability.item() < suitability_threshold:
-                    action_selector.EPS_START = max(action_selector.EPS_START * adjustment_factor, action_selector.EPS_END)
                 break
+
+        if predicted_suitability.item() < suitability_threshold:
+            action_selector.EPS_START = max(action_selector.EPS_START * adjustment_factor, action_selector.EPS_END)
         
         episode_rewards.append(episode_total_reward)
 
@@ -167,7 +173,25 @@ study_name = 'cartpole_study'
 # Create a new study or load an existing study
 pruner = optuna.pruners.PercentilePruner(5)
 study = optuna.create_study(study_name=study_name, storage=storage_url, direction='maximize', load_if_exists=True, pruner=pruner)
-study.optimize(objective, n_trials=500)
+
+
+try:
+    study.optimize(objective, n_trials=500)
+except Exception as e:
+    print(f"An error occurred during optimization: {e}")
+
+
+# After optimization, use the best trial to set the state of policy_net
+best_trial = study.best_trial
+best_model_path = f'cartpole_v1_best_model_{best_trial.number}.pth'
+best_model_state = torch.load(best_model_path)
+
+# Reinitialize the environment with the best trial's hyperparameters
+config.update(best_trial.params)
+env, policy_net, target_net, optimizer, action_selector, optimizer_instance = initialize_environment(config)
+
+policy_net.load_state_dict(best_model_state)
+torch.save(policy_net.state_dict(), 'cartpole_v1_best_overall_model.pth')
 
 # Load the study
 study = optuna.load_study(study_name=study_name, storage=storage_url)
