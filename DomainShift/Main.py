@@ -5,6 +5,8 @@ import torch
 import torch.nn.functional as F
 import optuna
 from matplotlib import pyplot as plt
+import torch.optim as optim
+import torch.nn as nn
 
 # custom imports
 from ReplayMemoryClass import ReplayMemory
@@ -12,6 +14,7 @@ from DQNClass import DQN
 from PlotFunction import plot_function
 from InitEnvironment import config, initialize_environment
 from DataLoggerClass import DataLogger
+from DomainShiftPredictor import DomainShiftPredictor
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -45,6 +48,14 @@ def objective(trial):
         "gamma": gamma,
     })
 
+    # domain shift predictor necessary values
+    input_dim = env.observation_space.shape[0] + 1 # size of the input (state + domain shift value)
+    hidden_dim = 128 # size of the hidden layers
+    output_dim = 1 # Size of the output (1 if suitable, 0 otherwise)
+    suitability_threshold = 0.5
+    adjustment_factor = 0.9 # factor to readjust hyperparams
+
+
     # Use the hyperparameters from the config dictionary
     PERFORMANCE_THRESHOLD = config['performance_threshold']
 
@@ -52,7 +63,11 @@ def objective(trial):
     env, policy_net, target_net, optimizer, action_selector, optimizer_instance = initialize_environment(config)
     memory = ReplayMemory(config['replay_memory_size'])
     optimizer_instance.memory = memory
-    
+    # Init domain shift predictor
+    domain_shift_predictor = DomainShiftPredictor(input_dim, hidden_dim, output_dim).to(device)
+    predictor_optimizer = optim.AdamW(domain_shift_predictor.parameters(), lr=lr, amsgrad=True)
+    predictor_loss_fn = nn.BCELoss()
+
     # For plotting function
     fig, axs = plt.subplots(4, 1, figsize=(10, 7))  # Create them once here
     episode_durations = []
@@ -69,7 +84,7 @@ def objective(trial):
         state, info = env.reset()
         state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
         episode_total_reward = 0 # reset the total reward for the episode
-        
+
         # Set the policy net to training mode at the start of each episode
         policy_net.train()
         
@@ -78,8 +93,28 @@ def objective(trial):
             action = action_selector.select_action(state)
 
             # Take action and observe new state
+            domain_shift_metric = env.quantify_domain_shift()
             (observation, reward, terminated, truncated, info), domain_shift = env.step(action.item())
+            domain_shift_tensor = torch.tensor([domain_shift_metric], dtype=torch.float32, device=device)
+            
             reward = torch.tensor([reward], device=device)
+            
+            predictor_input = torch.cat((state.flatten(), domain_shift_tensor), dim=0)
+            true_suitability = torch.tensor([[1.0]], device=device) if not (terminated or truncated) else torch.tensor([[0.0]], device=device)
+
+            # Predict suitability
+            predicted_suitability = domain_shift_predictor(predictor_input.unsqueeze(0))
+
+            # Calculate loss and update predictor
+            predictor_optimizer.zero_grad()
+            predictor_loss = predictor_loss_fn(predicted_suitability, true_suitability)
+            predictor_loss.backward()
+            predictor_optimizer.step()
+
+            # Adjust exploration rate based on predicted suitability
+            if predicted_suitability.item() < suitability_threshold:
+                action_selector.EPS_START = max(action_selector.EPS_START * adjustment_factor, action_selector.EPS_END)
+
             done = terminated or truncated
             episode_total_reward += reward.item() # accumulate reward
 
@@ -112,6 +147,10 @@ def objective(trial):
                 break
         
         episode_rewards.append(episode_total_reward)
+
+        predicted_suitability = domain_shift_predictor(state, domain_shift_metric)
+        if predicted_suitability < suitability_threshold:
+            action_selector.EPS_START = max(action_selector.EPS_START * adjustment_factor, action_selector.EPS_END)
         
         if len(episode_rewards) >= 100:
             average_reward = np.mean(episode_rewards[-100:])
