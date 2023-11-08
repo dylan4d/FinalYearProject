@@ -123,7 +123,7 @@ def objective(trial):
         eps_thresholds.append(current_eps_threshold)  # Append the latest epsilon value
 
         # Plot the graphs wanted
-        plot_function(fig, axs, episode_durations, losses, eps_thresholds, episode_rewards, optimization_mode=True)
+        plot_function(fig, axs, episode_durations, losses, eps_thresholds, episode_rewards, optimization_mode=False)
 
         trial.report(episode_durations[-1], i_episode)
 
