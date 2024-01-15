@@ -13,9 +13,10 @@ class DomainShiftPredictor:
         self.device = device
 
     def predict_suitability(self, state, domain_shift_metric):
-        with torch.no_grad():  # prediction does not require gradient
-            predictor_input = torch.cat((state.flatten(), domain_shift_metric.unsqueeze(0)), dim=0)
-            predicted_suitability = self.model(predictor_input.unsqueeze(0))
+        # Ensure both tensors have the same number of dimensions
+        # For example, if state is already flattened (1D) and domain_shift_metric is also 1D:
+        predictor_input = torch.cat((state, domain_shift_metric.unsqueeze(1)), dim=1)
+        predicted_suitability = self.model(predictor_input)
         return predicted_suitability
 
     def update(self, state, domain_shift_metric, true_suitability):

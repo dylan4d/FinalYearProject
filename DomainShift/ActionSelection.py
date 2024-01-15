@@ -28,7 +28,7 @@ class ActionSelector:
         self.steps_done = 0
         self.eps_thresholds = []
 
-    def select_action(self, state):
+    def select_action(self, state, domain_shift):
         sample = random.random()
         eps_threshold = self.EPS_END + (self.EPS_START - self.EPS_END) * math.exp(-1. * self.steps_done / self.EPS_DECAY)
         self.steps_done += 1
@@ -39,7 +39,7 @@ class ActionSelector:
         
         with torch.no_grad():
             if sample > eps_threshold:
-                return self.policy_net(state).max(1)[1].view(1, 1)
+                return self.policy_net(state, domain_shift).max(1)[1].view(1, 1)
             else:
                 return torch.tensor([[random.randrange(self.num_actions)]], dtype=torch.long, device=self.device)
     

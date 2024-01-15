@@ -93,14 +93,17 @@ def objective(trial):
         policy_net.train()
         
         for t in count():
+
+            # Calculate domain shift and domain shift tensor
+            domain_shift_metric = env.quantify_domain_shift()
+            domain_shift_tensor = torch.tensor([domain_shift_metric], dtype=torch.float32, device=device)
+
             # Select action
-            action = action_selector.select_action(state)
+            action = action_selector.select_action(state, domain_shift_tensor)
 
             # Take action and observe new state
-            domain_shift_metric = env.quantify_domain_shift()
             (observation, reward, terminated, truncated, info), domain_shift = env.step(action.item())
-            domain_shift_tensor = torch.tensor([domain_shift_metric], dtype=torch.float32, device=device)
-            
+            reward = torch.tensor([reward], device=device)
             reward = torch.tensor([reward], device=device)
 
             true_suitability = torch.tensor([[1.0]], device=device) if not (terminated or truncated) else torch.tensor([[0.0]], device=device)
@@ -162,13 +165,13 @@ def objective(trial):
     mean_reward = np.mean(episode_rewards[-100:]) if len(episode_rewards) >= 100 else np.mean(episode_rewards)
     if mean_reward > best_value:
         best_value = mean_reward
-        torch.save(policy_net.state_dict(), 'cartpole_v1_best_model.pth')
+        torch.save(policy_net.state_dict(), 'cartpole_v1_best_model_DSP.pth')
 
     return mean_reward
 
 # study organisation
 storage_url = "sqlite:///optuna_study.db"
-study_name = 'cartpole_study'
+study_name = 'cartpole_study_DSP'
 
 # Create a new study or load an existing study
 pruner = optuna.pruners.PercentilePruner(5)
@@ -183,7 +186,7 @@ except Exception as e:
 
 # After optimization, use the best trial to set the state of policy_net
 best_trial = study.best_trial
-best_model_path = f'cartpole_v1_best_model_{best_trial.number}.pth'
+best_model_path = 'cartpole_v1_best_model_DSP.pth'
 best_model_state = torch.load(best_model_path)
 
 # Reinitialize the environment with the best trial's hyperparameters
@@ -191,7 +194,7 @@ config.update(best_trial.params)
 env, policy_net, target_net, optimizer, action_selector, optimizer_instance = initialize_environment(config)
 
 policy_net.load_state_dict(best_model_state)
-torch.save(policy_net.state_dict(), 'cartpole_v1_best_overall_model.pth')
+torch.save(policy_net.state_dict(), 'cartpole_v1_best_model_DSP.pth')
 
 # Load the study
 study = optuna.load_study(study_name=study_name, storage=storage_url)

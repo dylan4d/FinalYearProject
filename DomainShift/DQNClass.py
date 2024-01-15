@@ -17,6 +17,7 @@ class DQN(nn.Module):
         self.layer3 = nn.Linear(128, n_actions)
     
     def forward(self, x, domain_shift):
+        domain_shift = domain_shift.unsqueeze(1)  # Reshape domain_shift to have the same number of dimensions as x
         x = torch.cat((x, domain_shift), dim=1)
         x = F.relu(self.layer1(x))
         x = F.relu(self.layer2(x))
