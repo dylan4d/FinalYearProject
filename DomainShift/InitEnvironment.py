@@ -43,8 +43,9 @@ def initialize_environment(config):
     n_observation = len(state)
 
     # Initialize policy and target networks with the proper device
-    policy_net = DQN(n_observation, n_actions).to(device)
-    target_net = DQN(n_observation, n_actions).to(device)
+    domain_shift_input_dim = 1
+    policy_net = DQN(n_observation, n_actions, domain_shift_input_dim).to(device)
+    target_net = DQN(n_observation, n_actions, domain_shift_input_dim).to(device)
     target_net.load_state_dict(policy_net.state_dict())
 
     # Set up the optimizer using the learning rate from config
