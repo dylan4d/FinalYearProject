@@ -80,7 +80,7 @@ def objective(trial):
     episode_rewards = []
 
     # Logging function
-    logger = DataLogger('training_data.csv')
+    logger = DataLogger('training_data_with_predictor.csv')
     env.set_logger(logger)
 
     num_episodes = 2500
