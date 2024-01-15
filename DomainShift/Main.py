@@ -117,7 +117,7 @@ def objective(trial):
             else:
                 next_state = None
             
-            memory.push(state, action, next_state, reward)
+            memory.push(state, action, next_state, reward, domain_shift_tensor)
             state = next_state
             loss = optimizer_instance.optimize()
 
