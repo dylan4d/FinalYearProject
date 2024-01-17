@@ -14,7 +14,6 @@ from DQNClass import DQN
 from PlotFunction import plot_function
 from InitEnvironment import config, initialize_environment
 from DataLoggerClass import DataLogger
-from DomainShiftPredictor import DomainShiftPredictor
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -69,9 +68,6 @@ def objective(trial):
     suitability_threshold = 0.5
     adjustment_factor = 0.9 # factor to readjust hyperparams
 
-    # Instantiate the domain shift class
-    domain_shift_module = DomainShiftPredictor(input_dim, hidden_dim, output_dim, lr, suitability_threshold, adjustment_factor, device)            
-
     # For plotting function
     fig, axs = plt.subplots(4, 1, figsize=(10, 7))  # Create them once here
     episode_durations = []
@@ -107,7 +103,6 @@ def objective(trial):
             reward = torch.tensor([reward], device=device)
 
             true_suitability = torch.tensor([[1.0]], device=device) if not (terminated or truncated) else torch.tensor([[0.0]], device=device)
-            loss, predicted_suitability = domain_shift_module.update(state, domain_shift_tensor, true_suitability)
             
             done = terminated or truncated
             episode_total_reward += reward.item() # accumulate reward
@@ -140,8 +135,7 @@ def objective(trial):
                 episode_durations.append(t + 1)
                 break
 
-        if predicted_suitability.item() < suitability_threshold:
-            action_selector.EPS_START = max(action_selector.EPS_START * adjustment_factor, action_selector.EPS_END)
+        action_selector.EPS_START = max(action_selector.EPS_START * adjustment_factor, action_selector.EPS_END)
         
         episode_rewards.append(episode_total_reward)
 
