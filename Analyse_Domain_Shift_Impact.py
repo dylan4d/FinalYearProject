@@ -21,4 +21,4 @@ def plot_domain_shift_impact(csv_file):
     plt.show()
 
 # Call the function with the path to CSV file
-plot_domain_shift_impact('training_data_with_predictor.csv')
+plot_domain_shift_impact('training_data_without_predictor.csv')
