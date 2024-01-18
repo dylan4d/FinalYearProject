@@ -1,7 +1,7 @@
 import optuna
 
 # Assuming you used the same study_name and storage_url
-study_name = 'cartpole_study'
+study_name = 'cartpole_study_DSP'
 storage_url = "sqlite:///optuna_study.db"
 
 # Load the study
@@ -15,6 +15,7 @@ print("Best trial:")
 trial = study.best_trial
 
 print("Value: ", trial.value)
+print("Trial Number: ", trial.number)
 print("Params: ")
 for key, value in trial.params.items():
     print(f"    {key}: {value}")
