@@ -174,7 +174,7 @@ storage_url = "sqlite:///optuna_study.db"
 study_name = 'cartpole_study_DSP'
 
 # Create a new study or load an existing study
-pruner = optuna.pruners.PercentilePruner(5)
+pruner = optuna.pruners.PercentilePruner(99)
 study = optuna.create_study(study_name=study_name, storage=storage_url, direction='maximize', load_if_exists=True, pruner=pruner)
 
 
