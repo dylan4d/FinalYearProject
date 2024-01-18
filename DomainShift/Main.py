@@ -179,7 +179,7 @@ study = optuna.create_study(study_name=study_name, storage=storage_url, directio
 
 
 try:
-    study.optimize(objective, n_trials=500)
+    study.optimize(objective, n_trials=100)
 except Exception as e:
     print(f"An error occurred during optimization: {e}")
 
