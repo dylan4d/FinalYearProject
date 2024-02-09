@@ -15,8 +15,8 @@ class CustomCartPoleEnv(CartPoleEnv):
         super().__init__()
         self.original_length = self.length  # Save the original length for resetting
         self.length_change_rate = 0.01  # Define how quickly the pole length should change
-        self.min_length_change = -0.1
-        self.max_length_change = 0.2
+        self.min_length_change = -0.01
+        self.max_length_change = 0.09
 
     def change_pole_length(self):
         length_change = random.uniform(self.min_length_change, self.max_length_change)
