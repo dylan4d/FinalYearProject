@@ -1,4 +1,5 @@
 from gym.envs.classic_control import CartPoleEnv
+import random
 
 class CustomCartPoleEnv(CartPoleEnv):
     """
@@ -14,9 +15,12 @@ class CustomCartPoleEnv(CartPoleEnv):
         super().__init__()
         self.original_length = self.length  # Save the original length for resetting
         self.length_change_rate = 0.01  # Define how quickly the pole length should change
+        self.min_length_change = 0.01
+        self.max_length_change = 0.5
 
     def change_pole_length(self):
-        self.length += self.length_change_rate
+        length_change = random.uniform(self.min_length_change, self.max_length_change)
+        self.length += length_change
         self.polemass_length = (self.masspole * self.length)
         self.total_mass = (self.masspole + self.masscart)
 
