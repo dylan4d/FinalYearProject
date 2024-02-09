@@ -141,7 +141,8 @@ def objective(trial):
                 break
 
         if predicted_suitability.item() < suitability_threshold:
-            action_selector.EPS_START = max(action_selector.EPS_START * adjustment_factor, action_selector.EPS_END)
+            min_epsilon_increase = 0.1  # Define a minimum increase to ensure noticeable changes
+            action_selector.EPS_START = min(max(action_selector.EPS_START, action_selector.EPS_END + min_epsilon_increase), 1.0)
         
         episode_rewards.append(episode_total_reward)
 
