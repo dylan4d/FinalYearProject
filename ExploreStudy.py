@@ -1,27 +1,26 @@
 import optuna
+from optuna.visualization import plot_optimization_history
 
-# study organisation
+# Study organization
 storage_url = "sqlite:///optuna_study.db"
-study_name = 'cartpole_study_NoDSP_Random'
+study_name = 'cartpole_study_DSP_Random'
 
-# Create a new study or load an existing study
+# Create a new study or load an existing study with a pruner
 pruner = optuna.pruners.PercentilePruner(99)
 study = optuna.create_study(study_name=study_name, storage=storage_url, direction='maximize', load_if_exists=True, pruner=pruner)
 
-
-
-# After optimization, use he best trial to set the state of policy_net
+# After optimization, access the best trial
 best_trial = study.best_trial
-best_model_path = 'cartpole_v1_best_model_NoDSP_Random.pth'
 
-study = optuna.load_study(study_name=study_name, storage=storage_url)
 print("Number of finished trials: ", len(study.trials))
 print("Best trial:")
-trial = study.best_trial
-
-print("Value: ", trial.value)
-print("Params: ")
-for key, value in trial.params.items():
+print(" Value: ", best_trial.value)
+print(" Params: ")
+for key, value in best_trial.params.items():
     print(f"    {key}: {value}")
 
-print(study.best_trial.number)
+# Plot the optimization history of the study
+plot = plot_optimization_history(study)
+
+# Save the plotly figure to a file
+plot.write_image('optimization_history.png')
