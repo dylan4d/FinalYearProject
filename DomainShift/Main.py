@@ -126,7 +126,11 @@ def objective(trial):
                 domain_shift=domain_shift,
                 cumulative_reward=episode_total_reward,
                 epsilon=action_selector.get_epsilon_thresholds()[-1],
-                loss=loss.item()  # This assumes `optimize()` returns a loss, otherwise you'll need to get it another way
+                loss=loss.item(),  # This assumes `optimize()` returns a loss, otherwise you'll need to get it another way
+                original_masscart= env.original_masscart,
+                current_mass= env.total_mass,
+                original_friction= env.original_force_mag,
+                current_friction= env.force_mag
                 )
 
             if done:
@@ -163,7 +167,7 @@ def objective(trial):
 
 # study organisation
 storage_url = "sqlite:///optuna_study.db"
-study_name = 'masscart_cartpole_study_NoDSP_Random'
+study_name = 'masscart_final_cartpole_study_NoDSP_Random'
 
 # Create a new study or load an existing study
 pruner = optuna.pruners.PercentilePruner(99)
