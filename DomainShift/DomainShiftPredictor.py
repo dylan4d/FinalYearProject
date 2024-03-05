@@ -47,8 +47,16 @@ class DomainShiftNN(nn.Module):
         """
         super(DomainShiftNN, self).__init__()
         self.fc1 = nn.Linear(input_dim, hidden_dim)
+        torch.nn.init.kaiming_normal_(self.fc1.weight, nonlinearity='relu')
+        self.fc1.bias.data.fill_(0.01)
+
         self.fc2 = nn.Linear(hidden_dim, hidden_dim)
+        torch.nn.init.kaiming_normal_(self.fc2.weight, nonlinearity='relu')
+        self.fc2.bias.data.fill_(0.01)
+
         self.fc3 = nn.Linear(hidden_dim, output_dim)
+        torch.nn.init.kaiming_normal_(self.fc3.weight, nonlinearity='relu')
+        self.fc3.bias.data.fill_(0.01)
 
     def forward(self, x):
         """
