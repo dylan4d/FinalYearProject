@@ -39,7 +39,7 @@ def objective(trial):
 
     # suggest values for tunable hyperparameters
     lr = trial.suggest_loguniform('lr', 1e-5, 1e-2)
-    eps_decay = trial.suggest_int('eps_decay', 100, 1000)
+    eps_decay = trial.suggest_int('eps_decay', 100, 2000)
     batch_size = trial.suggest_categorical('batch_size', [32, 64, 128, 256])
     gamma = trial.suggest_uniform('gamma', 0.8, 0.9999)
     
@@ -66,7 +66,7 @@ def objective(trial):
     input_dim = env.observation_space.shape[0] + 1 # size of the input (state + domain shift value)
     hidden_dim = 128 # size of the hidden layers
     output_dim = 1 # Size of the output (1 if suitable, 0 otherwise)
-    suitability_threshold = 0.5
+    suitability_threshold = 0.4
     adjustment_factor = 0.9 # factor to readjust hyperparams
 
     # Instantiate the domain shift class
