@@ -4,7 +4,7 @@ import os
 class DataLogger:
     def __init__(self, filename):
         self.filename = filename
-        self.fields = ['episode', 'step', 'original_length', 'current_length', 'action', 'reward', 'domain_shift', 'cumulative_reward', 'epsilon', 'loss', 'original_masscart', 'current_mass', 'original_friction', 'current_friction']
+        self.fields = ['episode', 'step', 'original_length', 'current_length', 'action', 'reward', 'domain_shift', 'cumulative_reward', 'epsilon', 'loss', 'original_masscart', 'current_mass', 'original_friction', 'current_friction', 'predicted_suitability']
         self.ensure_file()
 
     def ensure_file(self):
@@ -13,7 +13,7 @@ class DataLogger:
                 writer = csv.DictWriter(f, fieldnames=self.fields)
                 writer.writeheader()
 
-    def log_step(self, episode, step, original_length, current_length, action, reward, domain_shift, cumulative_reward, epsilon, loss, original_masscart, current_mass, original_friction, current_friction):
+    def log_step(self, episode, step, original_length, current_length, action, reward, domain_shift, cumulative_reward, epsilon, loss, original_masscart, current_mass, original_friction, current_friction, predicted_suitability):
         with open(self.filename, 'a', newline='') as f:
             writer = csv.DictWriter(f, fieldnames=self.fields)
             writer.writerow({
@@ -30,5 +30,6 @@ class DataLogger:
                 'original_masscart': original_masscart,
                 'current_mass': current_mass,
                 'original_friction': original_friction,
-                'current_friction': current_friction
+                'current_friction': current_friction,
+                'predicted_suitability': predicted_suitability
             })

@@ -137,7 +137,8 @@ def objective(trial):
                 original_masscart= env.original_masscart,
                 current_mass= env.total_mass,
                 original_friction= env.original_force_mag,
-                current_friction= env.force_mag
+                current_friction= env.force_mag,
+                predicted_suitability=predicted_suitability.item(),
                 )
 
             if done:
@@ -145,8 +146,7 @@ def objective(trial):
                 break
 
         if predicted_suitability.item() < suitability_threshold:
-            min_epsilon_increase = 0.1  # Define a minimum increase to ensure noticeable changes
-            action_selector.EPS_START = min(max(action_selector.EPS_START + min_epsilon_increase, action_selector.EPS_END + min_epsilon_increase), 1.0)
+            action_selector.reset_epsilon()
         
         episode_rewards.append(episode_total_reward)
 
