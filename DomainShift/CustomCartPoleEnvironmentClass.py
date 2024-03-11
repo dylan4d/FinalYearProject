@@ -22,8 +22,8 @@ class CustomCartPoleEnv(CartPoleEnv):
         self.min_masscart_change = 0.1 
         self.max_masscart_change = 1.0
         self.original_force_mag = self.force_mag # Save the original force
-        self.min_force_change = -2.0
-        self.max_force_change = 8.0
+        self.min_force_change = -4.0
+        self.max_force_change = 10.0
 
 
     def change_pole_length(self):
@@ -42,17 +42,20 @@ class CustomCartPoleEnv(CartPoleEnv):
         self.force_mag = force_change
 
     def step(self, action):
-        self.change_cart_friction()  # Change the pole length at each step
+        self.change_cart_friction()
+        self.change_cart_mass()
         domain_shift = self.quantify_domain_shift()
         observation, reward, terminated, truncated, info = super().step(action)
         return (observation, reward, terminated, truncated, info), domain_shift
 
     def reset(self):
         self.length = self.original_length  # Reset the pole length when the environment is reset
+        self.force_mag = self.original_force_mag
+        self.masscart = self.original_mass
         return super().reset()
     
     def quantify_domain_shift(self):
-        return abs(self.original_masscart - self.masscart)
+        return abs(self.original_masscart - self.masscart) + abs(self.original_force_mag - self.force_mag)
     
     def set_logger(self, logger):
         self.logger = logger

@@ -50,5 +50,6 @@ class ActionSelector:
         self.EPS_START = max(self.EPS_START * (1 - self.EPS_DECAY), self.EPS_END)
     
     def reset_epsilon(self):
-        self.EPS_START = self.eps_thresholds[0]
+        # self.EPS_START = self.eps_thresholds[0] # original
+        self.EPS_START = max(self.EPS_START * (1 - self.EPS_DECAY), self.EPS_END, 0.8)
         self.steps_done = 0
