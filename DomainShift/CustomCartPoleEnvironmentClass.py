@@ -51,7 +51,7 @@ class CustomCartPoleEnv(CartPoleEnv):
     def reset(self):
         self.length = self.original_length  # Reset the pole length when the environment is reset
         self.force_mag = self.original_force_mag
-        self.masscart = self.original_mass
+        self.masscart = self.original_masscart
         return super().reset()
     
     def quantify_domain_shift(self):
