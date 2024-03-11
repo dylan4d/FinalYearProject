@@ -42,7 +42,7 @@ class CustomCartPoleEnv(CartPoleEnv):
         self.force_mag = force_change
 
     def step(self, action):
-        self.change_cart_mass()  # Change the pole length at each step
+        self.change_cart_friction()  # Change the pole length at each step
         domain_shift = self.quantify_domain_shift()
         observation, reward, terminated, truncated, info = super().step(action)
         return (observation, reward, terminated, truncated, info), domain_shift
