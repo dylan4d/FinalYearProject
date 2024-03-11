@@ -38,10 +38,10 @@ def objective(trial):
     global best_value
 
     # suggest values for tunable hyperparameters
-    lr = trial.suggest_loguniform('lr', 1e-5, 1e-2)
+    lr = trial.suggest_float('lr', 1e-5, 1e-2, log=True)
     eps_decay = trial.suggest_int('eps_decay', 100, 2000)
     batch_size = trial.suggest_categorical('batch_size', [32, 64, 128, 256])
-    gamma = trial.suggest_uniform('gamma', 0.8, 0.9999)
+    gamma = trial.suggest_float('gamma', 0.8, 0.9999)
     
     # Update the config with the suggested values
     config.update({
@@ -87,28 +87,39 @@ def objective(trial):
     for i_episode in range(num_episodes):
         state, info = env.reset()
         state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
-        episode_total_reward = 0 # reset the total reward for the episode
-
-        # Set the policy net to training mode at the start of each episode
+        episode_total_reward = 0
         policy_net.train()
-        
-        for t in count():
+        predicted_suitability = None  # Initialize outside the loop
 
-            # Calculate domain shift and domain shift tensor
+        for t in count():
             domain_shift_metric = env.quantify_domain_shift()
             domain_shift_tensor = torch.tensor([domain_shift_metric], dtype=torch.float32, device=device)
 
-            # Select action
-            action = action_selector.select_action(state, domain_shift_tensor)
+            if i_episode < 200:
+                # Use random suitability for the first 200 episodes
+                random_suitability = torch.tensor([[np.random.rand()]], device=device)
+                action = action_selector.select_action(state, random_suitability)
+                predicted_suitability = random_suitability
+            else:
+                # Use the DSP model's prediction for suitability
+                predicted_suitability = domain_shift_module.predict_suitability(state, domain_shift_tensor)
+                action = action_selector.select_action(state, predicted_suitability)
 
-            # Take action and observe new state
+            # Take the action and observe the new state and reward
             (observation, reward, terminated, truncated, info), domain_shift = env.step(action.item())
             reward = torch.tensor([reward], device=device)
-            reward = torch.tensor([reward], device=device)
 
+            # Determine true suitability based on the episode outcome
             true_suitability = torch.tensor([[1.0]], device=device) if not (terminated or truncated) else torch.tensor([[0.0]], device=device)
-            loss, predicted_suitability = domain_shift_module.update(state, domain_shift_tensor, true_suitability)
-            
+
+            # Update the domain shift model
+            if predicted_suitability is not None:
+                loss, _ = domain_shift_module.update(state, domain_shift_tensor, true_suitability)
+
+            if i_episode >= 200:
+                    # Update the DSP model after the first 200 episodes
+                loss, _ = domain_shift_module.update(state, domain_shift_tensor, true_suitability)
+                
             done = terminated or truncated
             episode_total_reward += reward.item() # accumulate reward
 
@@ -176,7 +187,7 @@ def objective(trial):
 
 # study organisation
 storage_url = "sqlite:///optuna_study.db"
-study_name = 'masscart_cartpole_study_DSP_Random'
+study_name = 'masscart_cartpole_study_DSP_Random2'
 
 # Create a new study or load an existing study
 pruner = optuna.pruners.PercentilePruner(99)

@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
+import numpy as np
 
 class DomainShiftPredictor:
     def __init__(self, input_dim, hidden_dim, output_dim, lr, suitability_threshold, adjustment_factor, device):
@@ -11,21 +12,28 @@ class DomainShiftPredictor:
         self.suitability_threshold = suitability_threshold
         self.adjustment_factor = adjustment_factor
         self.device = device
+        # Added to keep track of episodes
+        self.episode_count = 0
 
     def predict_suitability(self, state, domain_shift_metric):
-        # Ensure both tensors have the same number of dimensions
-        # For example, if state is already flattened (1D) and domain_shift_metric is also 1D:
         predictor_input = torch.cat((state, domain_shift_metric.unsqueeze(1)), dim=1)
         predicted_suitability = self.model(predictor_input)
         return predicted_suitability
 
-    def update(self, state, domain_shift_metric, true_suitability):
-        predicted_suitability = self.predict_suitability(state, domain_shift_metric)
+    def update(self, state, domain_shift_metric, true_suitability, random_suitability=None):
+        # If random_suitability is provided and we are in the first 200 episodes, use it for training
+        if random_suitability is not None and self.episode_count < 200:
+            suitability = random_suitability
+        else:
+            suitability = self.predict_suitability(state, domain_shift_metric)
+
         self.optimizer.zero_grad()
-        loss = self.loss_fn(predicted_suitability, true_suitability)
+        loss = self.loss_fn(suitability, true_suitability)
         loss.backward()
         self.optimizer.step()
-        return loss, predicted_suitability
+        # Increase episode count after each update call
+        self.episode_count += 1
+        return loss.item(), suitability.detach()
 
 class DomainShiftNN(nn.Module):
     """
