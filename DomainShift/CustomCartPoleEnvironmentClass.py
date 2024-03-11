@@ -22,8 +22,8 @@ class CustomCartPoleEnv(CartPoleEnv):
         self.min_masscart_change = 0.1 
         self.max_masscart_change = 1.0
         self.original_force_mag = self.force_mag # Save the original force
-        self.min_force_change = 8.0
-        self.max_force_change = 12.0
+        self.min_force_change = -2.0
+        self.max_force_change = 8.0
 
 
     def change_pole_length(self):
