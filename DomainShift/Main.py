@@ -187,7 +187,7 @@ def objective(trial):
 
 # study organisation
 storage_url = "sqlite:///optuna_study.db"
-study_name = 'friction_and _mass_cartpole_study_DSP_Random'
+study_name = 'friction_and _mass_cartpole_study_DSP_Random2'
 
 # Create a new study or load an existing study
 pruner = optuna.pruners.PercentilePruner(99)
