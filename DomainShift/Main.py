@@ -76,7 +76,7 @@ def objective(trial):
     episode_rewards = []
 
     # Logging function
-    logger = DataLogger('masscart_random_change_training_data_without_predictor.csv')
+    logger = DataLogger('friction_and _mass_random_change_training_data_without_predictor.csv')
     env.set_logger(logger)
 
     num_episodes = 4000
@@ -161,13 +161,13 @@ def objective(trial):
     mean_reward = np.mean(episode_rewards[-100:]) if len(episode_rewards) >= 100 else np.mean(episode_rewards)
     if mean_reward > best_value:
         best_value = mean_reward
-        torch.save(policy_net.state_dict(), 'masscart_cartpole_v1_best_model_NoDSP_Random.pth')
+        torch.save(policy_net.state_dict(), 'friction_and _mass_random_change_training_data_without_predictor.pth')
 
     return mean_reward
 
 # study organisation
 storage_url = "sqlite:///optuna_study.db"
-study_name = 'masscart_final_cartpole_study_NoDSP_Random'
+study_name = 'friction_and _mass_random_change_without_predictor'
 
 # Create a new study or load an existing study
 pruner = optuna.pruners.PercentilePruner(99)
@@ -182,7 +182,7 @@ except Exception as e:
 
 # After optimization, use the best trial to set the state of policy_net
 best_trial = study.best_trial
-best_model_path = 'masscart_cartpole_v1_best_model_NoDSP_Random.pth'
+best_model_path = 'friction_and _mass_random_change_training_data_without_predictor.pth'
 best_model_state = torch.load(best_model_path)
 
 # Reinitialize the environment with the best trial's hyperparameters
@@ -190,7 +190,7 @@ config.update(best_trial.params)
 env, policy_net, target_net, optimizer, action_selector, optimizer_instance = initialize_environment(config)
 
 policy_net.load_state_dict(best_model_state)
-torch.save(policy_net.state_dict(), 'masscart_cartpole_v1_best_model_NoDSP_Random.pth')
+torch.save(policy_net.state_dict(), 'friction_and _mass_random_change_training_data_without_predictor.pth')
 
 # Load the study
 study = optuna.load_study(study_name=study_name, storage=storage_url)

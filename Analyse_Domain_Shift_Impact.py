@@ -104,10 +104,10 @@ def plot_domain_shift_impact(csv_file):
     plt.show()
 
 
-csv_file = 'random_change_training_data_with_predictor.csv'
+csv_file = 'friction_and _mass_random_change_training_data_without_predictor.csv'
 mean_rewards, mean_domain_shifts = calculate_mean_rewards(csv_file)
-#plot_mean_rewards(mean_rewards, mean_domain_shifts)
+plot_mean_rewards(mean_rewards, mean_domain_shifts)
 
 #plot_best_run(csv_file)
 #plot_reward_distribution(csv_file)
-plot_domain_shift_impact(csv_file)
+#plot_domain_shift_impact(csv_file)

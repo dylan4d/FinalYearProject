@@ -19,11 +19,11 @@ class CustomCartPoleEnv(CartPoleEnv):
         self.min_length_change = -0.01
         self.max_length_change = 0.09
         self.original_masscart = self.masscart # Save the original mass
-        self.min_masscart_change = 0.1 
-        self.max_masscart_change = 1.0
+        self.min_masscart_change = -0.1 
+        self.max_masscart_change = 0.4
         self.original_force_mag = self.force_mag # Save the original force
-        self.min_force_change = -2.0
-        self.max_force_change = 8.0
+        self.min_force_change = -0.4
+        self.max_force_change = 1.0
 
 
     def change_pole_length(self):
@@ -52,7 +52,7 @@ class CustomCartPoleEnv(CartPoleEnv):
         return super().reset()
     
     def quantify_domain_shift(self):
-        return abs(self.original_masscart - self.masscart)
+        return abs(self.original_masscart - self.masscart) + abs(self.original_force_mag - self.force_mag)
     
     def set_logger(self, logger):
         self.logger = logger
