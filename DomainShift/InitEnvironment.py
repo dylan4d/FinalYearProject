@@ -1,6 +1,6 @@
 import torch
 import torch.optim as optim
-from CustomCartPoleEnvironmentClass import CustomCartPoleEnv
+from DomainShift.CustomMountainCarEnv import CustomMountainCarEnv
 from ReplayMemoryClass import ReplayMemory
 from ActionSelection import ActionSelector
 from OptimizeModel import Optimizer
@@ -36,7 +36,7 @@ def initialize_environment(config):
                and optimizer instance.
     """
     
-    env = CustomCartPoleEnv()
+    env = CustomMountainCarEnv()
     memory = ReplayMemory(config['replay_memory_size'])  # Access from config
     n_actions = env.action_space.n
     state, _ = env.reset()
