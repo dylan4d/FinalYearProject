@@ -4,7 +4,7 @@ import os
 class DataLogger:
     def __init__(self, filename):
         self.filename = filename
-        self.fields = ['episode', 'step', 'original_length', 'current_length', 'action', 'reward', 'domain_shift', 'cumulative_reward', 'epsilon', 'loss', 'original_masscart', 'current_mass', 'original_friction', 'current_friction', 'predicted_suitability']
+        self.fields = ['episode', 'step', 'original_force', 'current_force', 'action', 'reward', 'domain_shift', 'cumulative_reward', 'epsilon', 'loss', 'predicted_suitability']
         self.ensure_file()
 
     def ensure_file(self):
@@ -13,23 +13,19 @@ class DataLogger:
                 writer = csv.DictWriter(f, fieldnames=self.fields)
                 writer.writeheader()
 
-    def log_step(self, episode, step, original_length, current_length, action, reward, domain_shift, cumulative_reward, epsilon, loss, original_masscart, current_mass, original_friction, current_friction, predicted_suitability):
+    def log_step(self, episode, step, original_force, current_force, action, reward, domain_shift, cumulative_reward, epsilon, loss, predicted_suitability):
         with open(self.filename, 'a', newline='') as f:
             writer = csv.DictWriter(f, fieldnames=self.fields)
             writer.writerow({
                 'episode': episode,
                 'step': step,
-                'original_length': original_length,
-                'current_length': current_length,
+                'original_force': original_force,
+                'current_force': current_force,
                 'action': action,
                 'reward': reward,
                 'domain_shift': domain_shift,
                 'cumulative_reward': cumulative_reward,
                 'epsilon': epsilon,
                 'loss': loss,
-                'original_masscart': original_masscart,
-                'current_mass': current_mass,
-                'original_friction': original_friction,
-                'current_friction': current_friction,
                 'predicted_suitability': predicted_suitability
             })
