@@ -13,7 +13,7 @@ class DataLogger:
                 writer = csv.DictWriter(f, fieldnames=self.fields)
                 writer.writeheader()
 
-    def log_step(self, episode, step, original_force, current_force, action, reward, domain_shift, cumulative_reward, epsilon, loss, original_masscart, current_mass, original_friction, current_friction):
+    def log_step(self, episode, step, original_force, current_force, action, reward, domain_shift, cumulative_reward, epsilon, loss):
         with open(self.filename, 'a', newline='') as f:
             writer = csv.DictWriter(f, fieldnames=self.fields)
             writer.writerow({

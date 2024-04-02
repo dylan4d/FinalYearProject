@@ -120,7 +120,7 @@ def objective(trial):
                 episode=i_episode,
                 step=t,
                 original_force=env.original_force,
-                current_force=env.current_force,
+                current_force=env.force,
                 action=action.item(),
                 reward=reward.item(),
                 domain_shift=domain_shift,

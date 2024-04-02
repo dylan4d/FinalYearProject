@@ -1,6 +1,6 @@
 import torch
 import torch.optim as optim
-from DomainShift.CustomMountainCarEnv import CustomMountainCarEnv
+from CustomMountainCarEnv import CustomMountainCarEnv
 from ReplayMemoryClass import ReplayMemory
 from ActionSelection import ActionSelector
 from OptimizeModel import Optimizer
