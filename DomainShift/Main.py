@@ -121,7 +121,7 @@ def objective(trial):
                 step=t,
                 original_gravity=env.original_gravity[1],
                 current_gravity=env.current_gravity[1],
-                action=action.item(),
+                action=action.squeeze(0).detach().to(device).numpy(),
                 reward=reward.item(),
                 domain_shift=domain_shift,
                 cumulative_reward=episode_total_reward,
