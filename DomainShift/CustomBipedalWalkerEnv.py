@@ -6,7 +6,7 @@ class CustomBipedalWalkerEnv(bipedal_walker.BipedalWalker):
         super().__init__()
         # Domain shifts
         self.original_gravity = self.world.gravity
-        self.min_gravity_change = -2.0
+        self.min_gravity_change = -1.0
         self.max_gravity_change = 2.0
     
     def change_gravity(self):
