@@ -3,7 +3,7 @@ from optuna.visualization import plot_optimization_history
 
 # Study organization
 storage_url = "sqlite:///optuna_study.db"
-study_name = 'friction_and _mass_random_change_without_predictor'
+study_name = 'mountaincar_v0_NODSP'
 
 # Create a new study or load an existing study with a pruner
 pruner = optuna.pruners.PercentilePruner(99)

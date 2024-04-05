@@ -33,8 +33,7 @@ def plot_mean_rewards(mean_rewards, mean_domain_shifts):
 
     plt.figure(figsize=(10, 5))
     plt.scatter(episodes, mean_cumulative_rewards, c=mean_domain_shift_sizes, cmap='viridis')
-    plt.colorbar(label='Mean Domain Shift Size')
-    plt.title('Mean Cumulative Reward per Episode (Colored by Domain Shift Size)')
+    plt.title('Mean Cumulative Reward per Episode')
     plt.xlabel('Episode')
     plt.ylabel('Mean Cumulative Reward')
     plt.grid(True)
@@ -104,7 +103,7 @@ def plot_domain_shift_impact(csv_file):
     plt.show()
 
 
-csv_file = 'friction_and _mass_random_change_training_data_without_predictor.csv'
+csv_file = 'mountaincar_v0_force_change_NoDSP.csv'
 mean_rewards, mean_domain_shifts = calculate_mean_rewards(csv_file)
 plot_mean_rewards(mean_rewards, mean_domain_shifts)
 
