@@ -4,7 +4,7 @@ import os
 class DataLogger:
     def __init__(self, filename):
         self.filename = filename
-        self.fields = ['episode', 'step', 'original_force', 'current_force', 'action', 'reward', 'domain_shift', 'cumulative_reward', 'epsilon', 'loss', 'predicted_suitability']
+        self.fields = ['episode', 'step', 'original_gravity', 'current_gravity', 'action', 'reward', 'domain_shift', 'cumulative_reward', 'epsilon', 'loss', 'predicted_suitability']
         self.ensure_file()
 
     def ensure_file(self):
@@ -13,14 +13,14 @@ class DataLogger:
                 writer = csv.DictWriter(f, fieldnames=self.fields)
                 writer.writeheader()
 
-    def log_step(self, episode, step, original_force, current_force, action, reward, domain_shift, cumulative_reward, epsilon, loss, predicted_suitability):
+    def log_step(self, episode, step, original_gravity, current_gravity, action, reward, domain_shift, cumulative_reward, epsilon, loss, predicted_suitability):
         with open(self.filename, 'a', newline='') as f:
             writer = csv.DictWriter(f, fieldnames=self.fields)
             writer.writerow({
                 'episode': episode,
                 'step': step,
-                'original_force': original_force,
-                'current_force': current_force,
+                'original_gravity': original_gravity,
+                'current_gravity': current_gravity,
                 'action': action,
                 'reward': reward,
                 'domain_shift': domain_shift,

@@ -1,6 +1,6 @@
 import torch
 import torch.optim as optim
-from CustomMountainCarEnv import CustomMountainCarEnv
+from CustomBipedalWalkerEnv import CustomBipedalWalkerEnv
 from ReplayMemoryClass import ReplayMemory
 from ActionSelection import ActionSelector
 from OptimizeModel import Optimizer
@@ -36,16 +36,15 @@ def initialize_environment(config):
                and optimizer instance.
     """
     
-    env = CustomMountainCarEnv()
+    env = CustomBipedalWalkerEnv()
     memory = ReplayMemory(config['replay_memory_size'])  # Access from config
-    n_actions = env.action_space.n
-    state, _ = env.reset()
-    n_observation = len(state)
+    state_dim = env.observation_space.shape[0]
+    action_dim = env.observation_space.shape[0]
 
     # Initialize policy and target networks with the proper device
     domain_shift_input_dim = 1
-    policy_net = DQN(n_observation, n_actions, domain_shift_input_dim).to(device)
-    target_net = DQN(n_observation, n_actions, domain_shift_input_dim).to(device)
+    policy_net = DQN(state_dim, action_dim, domain_shift_input_dim).to(device)
+    target_net = DQN(state_dim, action_dim, domain_shift_input_dim).to(device)
     target_net.load_state_dict(policy_net.state_dict())
 
     # Set up the optimizer using the learning rate from config
