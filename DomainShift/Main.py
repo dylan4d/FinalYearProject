@@ -119,8 +119,8 @@ def objective(trial):
                 logger.log_step(
                 episode=i_episode,
                 step=t,
-                original_force=env.original_force,
-                current_force=env.force,
+                original_gravity=env.original_gravity[1],
+                current_gravity=env.current_gravity[1],
                 action=action.item(),
                 reward=reward.item(),
                 domain_shift=domain_shift,
