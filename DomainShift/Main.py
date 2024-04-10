@@ -98,7 +98,7 @@ def objective(trial):
             if i_episode < 200:
                 # Use random suitability for the first 200 episodes
                 random_suitability = torch.tensor([[np.random.rand()]], device=device)
-                action = torch.tensor(env.action_space.sample(), dtype=torch.float32, device=device).unsqueeze(0)
+                action = torch.tensor(np.random.uniform(low=-1, high=1, size=(env.action_space.shape[0],)), dtype=torch.float32, device=device).unsqueeze(0)
                 predicted_suitability = random_suitability
             else:
                 # Use the DSP model's prediction for suitability
@@ -106,9 +106,9 @@ def objective(trial):
                 action = policy_net(state, predicted_suitability)
 
             # Take the action and observe the new state and reward
-            (observation, reward, terminated, truncated, info), domain_shift = env.step(action.squeeze(0).detach().cpu().numpy())
-            reward = torch.tensor([reward], device=device)
+            (observation, reward, terminated, truncated, info), domain_shift = env.step(action.squeeze(0).detach().numpy())
 
+            reward = torch.tensor([reward], device=device)
             # Determine true suitability based on the episode outcome
             true_suitability = torch.tensor([[1.0]], device=device) if not (terminated or truncated) else torch.tensor([[0.0]], device=device)
 

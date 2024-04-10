@@ -17,6 +17,7 @@ class CustomBipedalWalkerEnv(bipedal_walker.BipedalWalker):
         self.change_gravity()
         domain_shift = self.quantify_domain_shift()
         observation, reward, terminated, truncated, info = super().step(action)
+        self.logger.log_step(self.episode, self.step, self.original_gravity[1], self.world.gravity[1], action, reward, domain_shift)
         return (observation, reward, terminated, truncated, info), domain_shift
 
     def reset(self):

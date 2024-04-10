@@ -1,6 +1,7 @@
 import random
 import math
 import torch
+import numpy as np
 
 class ActionSelector:
     """
@@ -18,16 +19,16 @@ class ActionSelector:
         eps_thresholds (list): A list to store the value of epsilon after each step.
     """
     
-    def __init__(self, policy_net, num_actions, device, EPS_START, EPS_END, EPS_DECAY):
+    def __init__(self, policy_net, action_dim, device, EPS_START, EPS_END, EPS_DECAY):
         self.policy_net = policy_net
-        self.num_actions = num_actions
+        self.action_dim = action_dim
         self.device = device
         self.EPS_START = EPS_START
         self.EPS_END = EPS_END
         self.EPS_DECAY = EPS_DECAY
         self.steps_done = 0
         self.eps_thresholds = []
-
+    
     def select_action(self, state, domain_shift):
         sample = random.random()
         eps_threshold = self.EPS_END + (self.EPS_START - self.EPS_END) * math.exp(-1. * self.steps_done / self.EPS_DECAY)
@@ -39,10 +40,10 @@ class ActionSelector:
         
         with torch.no_grad():
             if sample > eps_threshold:
-                return self.policy_net(state, domain_shift).max(1)[1].view(1, 1)
+                return self.policy_net(state, domain_shift)
             else:
-                return torch.tensor([[random.randrange(self.num_actions)]], dtype=torch.long, device=self.device)
-    
+                return torch.tensor(np.random.uniform(low=-1, high=1, size=(self.action_dim,)), dtype=torch.float32, device=self.device).unsqueeze(0)
+
     def get_epsilon_thresholds(self):
         return self.eps_thresholds
     

@@ -45,16 +45,14 @@ class Optimizer:
             reward_batch = torch.cat(batch.reward)
             domain_shift_batch = torch.cat(batch.domain_shift)  # Current state domain shifts
 
-            state_action_values = self.policy_net(state_batch, domain_shift_batch).gather(1, action_batch)
-
+            state_action_values = self.policy_net(state_batch, domain_shift_batch)
             next_state_values = torch.zeros(self.BATCH_SIZE, device=self.device)
             with torch.no_grad():
                 next_state_actions = self.policy_net(non_final_next_states, non_final_domain_shifts).max(1)[1].unsqueeze(1)
                 next_state_values[non_final_mask] = self.target_net(non_final_next_states, non_final_domain_shifts).gather(1, next_state_actions).squeeze(1)
             
-            expected_state_action_values = (next_state_values * self.GAMMA) + reward_batch
-            
-            loss = F.smooth_l1_loss(state_action_values, expected_state_action_values.unsqueeze(1))
+            expected_state_action_values = (next_state_values * self.GAMMA) + reward_batch            
+            loss = F.mse_loss(state_action_values, expected_state_action_values.unsqueeze(1))
             self.losses.append(loss.item())  # Store the loss value
 
             self.optimizer.zero_grad()  # Zero the gradients before the backward pass

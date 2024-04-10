@@ -14,4 +14,4 @@ class DQN(nn.Module):
         x = torch.cat((x, domain_shift), dim=1)
         x = F.relu(self.layer1(x))
         x = F.relu(self.layer2(x))
-        return self.layer3(x)
+        return torch.tanh(self.layer3(x))  # Use tanh activation for continuous actions
