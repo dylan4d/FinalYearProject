@@ -53,7 +53,7 @@ def initialize_environment(config):
     # Initialize the action selector with parameters from config
     action_selector = ActionSelector(
         policy_net,
-        env.action_space.n,
+        env.action_space.shape[0],
         device,
         config['eps_start'],
         config['eps_end'],

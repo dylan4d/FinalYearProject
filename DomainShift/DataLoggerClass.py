@@ -28,4 +28,4 @@ class DataLogger:
                 'epsilon': epsilon,
                 'loss': loss,
                 'predicted_suitability': predicted_suitability
-            })
+        })

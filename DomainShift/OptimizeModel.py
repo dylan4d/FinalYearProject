@@ -30,38 +30,42 @@ class Optimizer:
         self.losses = []
 
     def optimize(self):
-            if len(self.memory) < self.BATCH_SIZE:
-                return
+        if len(self.memory) < self.BATCH_SIZE:
+            return
 
-            transitions = self.memory.sample(self.BATCH_SIZE)
-            batch = Transition(*zip(*transitions))
+        transitions = self.memory.sample(self.BATCH_SIZE)
+        batch = Transition(*zip(*transitions))
 
-            non_final_mask = torch.tensor([s is not None for s in batch.next_state], device=self.device, dtype=torch.bool)
-            non_final_next_states = torch.cat([s for s in batch.next_state if s is not None])
-            non_final_domain_shifts = torch.cat([ds for s, ds in zip(batch.next_state, batch.domain_shift) if s is not None])  # Next state domain shifts
+        non_final_mask = torch.tensor([s is not None for s in batch.next_state], device=self.device, dtype=torch.bool)
+        non_final_next_states = torch.cat([s for s in batch.next_state if s is not None])
+        non_final_domain_shifts = torch.cat([ds for s, ds in zip(batch.next_state, batch.domain_shift) if s is not None])  # Next state domain shifts
 
-            state_batch = torch.cat(batch.state)
-            action_batch = torch.cat(batch.action)
-            reward_batch = torch.cat(batch.reward)
-            domain_shift_batch = torch.cat(batch.domain_shift)  # Current state domain shifts
+        state_batch = torch.cat(batch.state)
+        action_batch = torch.cat(batch.action)
+        reward_batch = torch.cat(batch.reward)
+        domain_shift_batch = torch.cat(batch.domain_shift)  # Current state domain shifts
 
-            state_action_values = self.policy_net(state_batch, domain_shift_batch)
-            next_state_values = torch.zeros(self.BATCH_SIZE, device=self.device)
-            with torch.no_grad():
-                next_state_actions = self.policy_net(non_final_next_states, non_final_domain_shifts).max(1)[1].unsqueeze(1)
-                next_state_values[non_final_mask] = self.target_net(non_final_next_states, non_final_domain_shifts).gather(1, next_state_actions).squeeze(1)
-            
-            expected_state_action_values = (next_state_values * self.GAMMA) + reward_batch            
-            loss = F.mse_loss(state_action_values, expected_state_action_values.unsqueeze(1))
-            self.losses.append(loss.item())  # Store the loss value
+        state_action_values = self.policy_net(state_batch, domain_shift_batch)
+        state_action_values = state_action_values.gather(1, action_batch.unsqueeze(1)).squeeze(1)  # Select the Q-values for the chosen actions
 
-            self.optimizer.zero_grad()  # Zero the gradients before the backward pass
-            loss.backward()  # Compute the backward pass
-            torch.nn.utils.clip_grad_value_(self.policy_net.parameters(), 100)  # Gradient clipping
-            self.optimizer.step()  # Take a step with the optimizer
+        next_state_values = torch.zeros(self.BATCH_SIZE, device=self.device)
+        with torch.no_grad():
+            next_state_actions = self.policy_net(non_final_next_states, non_final_domain_shifts).max(1)[1].unsqueeze(1)
+            next_state_values[non_final_mask] = self.target_net(non_final_next_states, non_final_domain_shifts).gather(1, next_state_actions).squeeze(1)
 
-            # Soft update the target network
-            for target_param, policy_param in zip(self.target_net.parameters(), self.policy_net.parameters()):
-                target_param.data.copy_(self.TAU * policy_param.data + (1.0 - self.TAU) * target_param.data)
-            
-            return loss
+        expected_state_action_values = (next_state_values * self.GAMMA) + reward_batch
+        expected_state_action_values = expected_state_action_values.float()  # Cast to float dtype
+
+        loss = F.mse_loss(state_action_values, expected_state_action_values)
+        self.losses.append(loss.item())  # Store the loss value
+
+        self.optimizer.zero_grad()  # Zero the gradients before the backward pass
+        loss.backward()  # Compute the backward pass
+        torch.nn.utils.clip_grad_value_(self.policy_net.parameters(), 100)  # Gradient clipping
+        self.optimizer.step()  # Take a step with the optimizer
+
+        # Soft update the target network
+        for target_param, policy_param in zip(self.target_net.parameters(), self.policy_net.parameters()):
+            target_param.data.copy_(self.TAU * policy_param.data + (1.0 - self.TAU) * target_param.data)
+
+        return loss

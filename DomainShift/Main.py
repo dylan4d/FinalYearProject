@@ -86,7 +86,10 @@ def objective(trial):
     num_episodes = 4000
     for i_episode in range(num_episodes):
         state, info = env.reset()
+        print("State structure", state)
+        state = state[0][0]  # Extract the array from the nested tuple
         state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
+
         episode_total_reward = 0
         policy_net.train()
         predicted_suitability = None  # Initialize outside the loop
@@ -106,8 +109,9 @@ def objective(trial):
                 action = policy_net(state, predicted_suitability)
 
             # Take the action and observe the new state and reward
-            (observation, reward, terminated, truncated, info), domain_shift = env.step(action.squeeze(0).detach().numpy())
-
+            (observation, reward, terminated, truncated, info), domain_shift = env.step(action.squeeze(0).detach().cpu().numpy())
+            state = np.array(observation, dtype=np.float32)
+            state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
             reward = torch.tensor([reward], device=device)
             # Determine true suitability based on the episode outcome
             true_suitability = torch.tensor([[1.0]], device=device) if not (terminated or truncated) else torch.tensor([[0.0]], device=device)
@@ -138,15 +142,15 @@ def objective(trial):
                 episode=i_episode,
                 step=t,
                 original_gravity=env.original_gravity[1],
-                current_gravity=env.current_gravity[1],
-                action=action.squeeze(0).detach().to(device).numpy(),
+                current_gravity=env.world.gravity[1],
+                action=action.squeeze(0).detach().cpu().numpy(),
                 reward=reward.item(),
                 domain_shift=domain_shift,
                 cumulative_reward=episode_total_reward,
-                epsilon=action_selector.get_epsilon_thresholds()[-1],
-                loss=loss.item(),  # This assumes `optimize()` returns a loss, otherwise you'll need to get it another way
-                predicted_suitability=predicted_suitability.item(),
-                )
+                epsilon=action_selector.get_epsilon_thresholds()[-1] if action_selector.get_epsilon_thresholds() else 0,
+                loss=loss.item() if loss is not None else 0,
+                predicted_suitability=predicted_suitability.item() if predicted_suitability is not None else 0,
+            )
 
             if done:
                 episode_durations.append(t + 1)
