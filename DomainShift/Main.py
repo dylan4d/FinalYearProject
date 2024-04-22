@@ -83,10 +83,9 @@ def objective(trial):
     logger = DataLogger('bipedal_walker_gravity_change_DSP.csv')
     env.set_logger(logger)
 
-    num_episodes = 4000
+    num_episodes = 40000
     for i_episode in range(num_episodes):
         state, info = env.reset()
-        print("State structure", state)
         state = state[0][0]  # Extract the array from the nested tuple
         state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
 
@@ -98,15 +97,8 @@ def objective(trial):
             domain_shift_metric = env.quantify_domain_shift()
             domain_shift_tensor = torch.tensor([domain_shift_metric], dtype=torch.float32, device=device)
             
-            if i_episode < 200:
-                # Use random suitability for the first 200 episodes
-                random_suitability = torch.tensor([[np.random.rand()]], device=device)
-                action = torch.tensor(np.random.uniform(low=-1, high=1, size=(env.action_space.shape[0],)), dtype=torch.float32, device=device).unsqueeze(0)
-                predicted_suitability = random_suitability
-            else:
-                # Use the DSP model's prediction for suitability
-                predicted_suitability = domain_shift_module.predict_suitability(state, domain_shift_tensor)
-                action = policy_net(state, predicted_suitability)
+            predicted_suitability = domain_shift_module.predict_suitability(state, domain_shift_tensor)
+            action = torch.tensor(np.random.uniform(low=-1, high=1, size=(env.action_space.shape[0],)), dtype=torch.float32, device=device).unsqueeze(0)
 
             # Take the action and observe the new state and reward
             (observation, reward, terminated, truncated, info), domain_shift = env.step(action.squeeze(0).detach().cpu().numpy())
@@ -167,11 +159,14 @@ def objective(trial):
                 action_selector.update_epsilon()
         
         # Get the current epsilon threshold after update
-        current_eps_threshold = action_selector.get_epsilon_thresholds()[-1]
-        eps_thresholds.append(current_eps_threshold)  # Append the latest epsilon value
+        if action_selector.get_epsilon_thresholds():
+            current_eps_threshold = action_selector.get_epsilon_thresholds()[-1]
+            eps_thresholds.append(current_eps_threshold)  # Append the latest epsilon value
+        else:
+            current_eps_threshold = None
 
         # Plot the graphs wanted
-        plot_function(fig, axs, episode_durations, losses, eps_thresholds, episode_rewards, optimization_mode=False)
+        plot_function(fig, axs, episode_durations, losses, eps_thresholds, episode_rewards, optimization_mode=True)
 
         trial.report(episode_durations[-1], i_episode)
 
@@ -187,7 +182,7 @@ def objective(trial):
 
 # study organisation
 storage_url = "sqlite:///optuna_study.db"
-study_name = 'bipedal_walker_gravity_DSP'
+study_name = 'bipedal_walker_gravity_DSP_final'
 
 # Create a new study or load an existing study
 pruner = optuna.pruners.PercentilePruner(99)

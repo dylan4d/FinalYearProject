@@ -36,7 +36,7 @@ def initialize_environment(config):
                and optimizer instance.
     """
     
-    env = CustomBipedalWalkerEnv()
+    env = CustomBipedalWalkerEnv(render_mode='human')
     memory = ReplayMemory(config['replay_memory_size'])  # Access from config
     state_dim = env.observation_space.shape[0]
     action_dim = env.observation_space.shape[0]
